@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasPath, BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime
 from typing import Optional, List, Dict
@@ -24,7 +24,7 @@ class CardSearchResponse(BaseModel):
     id: UUID  # The specific Card Print ID
     collection_number: str
     rarity: Optional[str] = None
-    set_code: str = Field(..., validation_alias="set.code") # Accesses Expansion.code
+    set_code: str = Field(..., validation_alias=AliasPath("set", "code"))
     release_date: datetime
     image_map: Dict[str, str] # Uses your @property from the model
     
@@ -36,5 +36,24 @@ class CardSearchResponse(BaseModel):
 # 2. The "All Versions" Result (The Oracle card + a list of all prints)
 class CardHistoryResponse(OracleBase):
     prints: List[CardSearchResponse] = Field(..., alias="cards")
-    
+
     model_config = ConfigDict(from_attributes=True)
+
+class SetsResponse(BaseModel):
+    id: UUID
+    code: str
+    name: str
+    icon: Optional[str] = None
+    card_count: Optional[int] = None
+    released_at: Optional[datetime] = None
+    set_type: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+# 3. Paginated wrapper for search results
+class CardSearchPage(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    results: List[CardSearchResponse]
